@@ -59,5 +59,9 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
           echo "Membangun Docker image untuk Run ID: ${{ env.RUN_ID }}"
-          mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/random_forest_model" -n ${{ secrets.DOCKER_USERNAME }}/msml-model:latest
+          
+          # Build Docker image dengan Conda untuk mencegah error 'distutils'
+          mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/random_forest_model" -n ${{ secrets.DOCKER_USERNAME }}/msml-model:latest --env-manager conda
+          
+          # Push ke Docker Hub
           docker push ${{ secrets.DOCKER_USERNAME }}/msml-model:latest
