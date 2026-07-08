@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # <-- Diperbarui ke v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # <-- Diperbarui ke v5
         with:
           python-version: '3.10'
 
@@ -52,13 +52,13 @@ jobs:
           mlflow artifacts download -u "runs:/${{ env.RUN_ID }}/random_forest_model" -d model_artifact
 
       - name: Upload Artifact to GitHub
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # <-- INI YANG MENYEBABKAN ERROR TADI, sudah diperbarui ke v4
         with:
           name: model-artifact
           path: model_artifact/
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3 # <-- Diperbarui ke v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
