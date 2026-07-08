@@ -20,16 +20,20 @@ jobs:
           python-version: '3.10'
 
       - name: Install MLflow & Dependencies
-        run: pip install mlflow==2.19.0 dagshub virtualenv
+        # Menginstal semua library yang dibutuhkan secara langsung
+        run: pip install mlflow==2.19.0 dagshub pandas scikit-learn matplotlib seaborn virtualenv
 
       - name: Run MLProject Training
         env:
           MLFLOW_TRACKING_URI: https://dagshub.com/aksaex/MSML_Proyek_Akhir.mlflow
           MLFLOW_TRACKING_USERNAME: aksaex
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+          # Menambahkan Token DagsHub agar skrip python tidak meminta login manual
+          DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
           cd MLProject
-          mlflow run .
+          # Menjalankan MLflow menggunakan env lokal (pip yang sudah diinstal di atas)
+          mlflow run . --env-manager=local
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -43,12 +47,9 @@ jobs:
           MLFLOW_TRACKING_USERNAME: aksaex
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
-          # Mengambil Run ID terakhir dari eksperimen
           export RUN_ID=$(mlflow runs search --experiment-ids 0 --max-results 1 --output-format json | jq -r '.[0].info.run_id')
           echo "Building Docker image for Run ID: $RUN_ID"
           
-          # Build Docker image dari model artifact
           mlflow models build-docker -m "runs:/$RUN_ID/random_forest_model" -n ${{ secrets.DOCKER_USERNAME }}/msml-model:latest
           
-          # Push ke Docker Hub
           docker push ${{ secrets.DOCKER_USERNAME }}/msml-model:latest
