@@ -9,7 +9,7 @@ on:
 
 jobs:
   train-and-build:
-    runs-on: ubuntu-22.04 # KUNCI 1: Gunakan Ubuntu yang stabil
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -20,8 +20,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install MLflow & Dependencies
-        # KUNCI 2: Gunakan MLflow 2.15.0 yang aman untuk Docker Build
-        run: pip install mlflow==2.15.0 dagshub pandas scikit-learn matplotlib seaborn virtualenv
+        run: pip install mlflow==2.19.0 dagshub pandas scikit-learn matplotlib seaborn virtualenv
 
       - name: Run MLProject Training
         env:
@@ -44,6 +43,20 @@ jobs:
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Berhasil mendapatkan Run ID: $RUN_ID"
 
+      - name: Download Model Artifact
+        env:
+          MLFLOW_TRACKING_URI: https://dagshub.com/aksaex/MSML_Proyek_Akhir.mlflow
+          MLFLOW_TRACKING_USERNAME: aksaex
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          mlflow artifacts download -u "runs:/${{ env.RUN_ID }}/random_forest_model" -d model_artifact
+
+      - name: Upload Artifact to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: model-artifact
+          path: model_artifact/
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
@@ -55,8 +68,6 @@ jobs:
           MLFLOW_TRACKING_URI: https://dagshub.com/aksaex/MSML_Proyek_Akhir.mlflow
           MLFLOW_TRACKING_USERNAME: aksaex
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
-          # KUNCI 3: Tolak compile dari source agar pyarrow tidak error
-          PIP_PREFER_BINARY: 1 
         run: |
           echo "Membangun Docker image untuk Run ID: ${{ env.RUN_ID }}"
           mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/random_forest_model" -n ${{ secrets.DOCKER_USERNAME }}/msml-model:latest
