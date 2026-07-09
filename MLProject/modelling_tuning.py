@@ -76,7 +76,7 @@ def train_and_log():
         mlflow.log_artifact("feature_importance.png")
         plt.close()
 
-        print("Selesai! Model berhasil dikirim ke DagsHub.")
+        print("Selesai! Model berhasil dikirim ke DagsHub dengan Python 3.10.12")
 
 if __name__ == "__main__":
     train_and_log()
