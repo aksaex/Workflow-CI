@@ -68,8 +68,39 @@ jobs:
           MLFLOW_TRACKING_URI: https://dagshub.com/aksaex/MSML_Proyek_Akhir.mlflow
           MLFLOW_TRACKING_USERNAME: aksaex
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
         run: |
           echo "Membangun Docker image untuk Run ID: ${{ env.RUN_ID }}"
-          # KUNCI JAWABAN: Tambahkan --env-manager conda di ujung agar tidak memakai get-pip.py
-          mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/random_forest_model" -n ${{ secrets.DOCKER_USERNAME }}/msml-model:latest --env-manager conda
+          
+          # --- INI DIA KODE SAKTINYA ---
+          # Kita gunakan Python API untuk memaksa base image ke python:3.10-slim
+          cat << 'EOF' > build_docker_custom.py
+          import os
+          
+          # Mencoba memanggil fungsi build_docker dari modul yang tepat
+          try:
+              from mlflow.models import build_docker
+          except ImportError:
+              from mlflow.models.python_api import build_docker
+
+          run_id = os.environ.get("RUN_ID")
+          docker_user = os.environ.get("DOCKER_USER")
+          
+          model_uri = f"runs:/{run_id}/random_forest_model"
+          image_name = f"{docker_user}/msml-model:latest"
+          
+          print(f"Menggunakan Kode Sakti: Force building Docker image {image_name} dengan base image python:3.10-slim")
+          
+          build_docker(
+              model_uri=model_uri,
+              name=image_name,
+              env_manager="virtualenv",
+              base_image="python:3.10-slim" # <-- Ini yang akan membunuh error get-pip!
+          )
+          EOF
+          
+          python build_docker_custom.py
+          # -----------------------------
+          
+          # Push image ke Docker Hub
           docker push ${{ secrets.DOCKER_USERNAME }}/msml-model:latest
